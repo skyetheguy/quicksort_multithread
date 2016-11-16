@@ -57,6 +57,7 @@ __task void base_task( void ) {
 }
 
 int main( void ) {
+	printf("HELLO SKYE \n");
 
 	SystemInit();
 	SystemCoreClockUpdate();

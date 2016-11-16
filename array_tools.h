@@ -12,7 +12,8 @@
 
 typedef  unsigned char array_type;
 
-#define LARGE_ARRAY (1 << 13)
+//#define LARGE_ARRAY (1 << 13)
+#define LARGE_ARRAY (1 << 10)
 
 typedef struct {
 	array_type *array;

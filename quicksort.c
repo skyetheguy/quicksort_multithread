@@ -10,30 +10,31 @@
 // You decide what the threshold will be
 #define USE_INSERTION_SORT 5
 
+
+#define TASK_PARAM ((qsort_task_parameters_t*)void_ptr)
+
 // Local prototypes
 
 
 
-//structs
-typedef struct {
-	array_t array;
-	size_t a;
-	size_t c;
-} array_interval_t;
-
-typedef struct{
-	array_interval_t interval;
-	unsigned char priority;
-} qsort_task_parameters_t;
 
 
-// swap function used in the partition function
+
+
+// =======================================================================
+// SWAP FUNCTION USED IN THE PARTITION FUNCTION
+// ======================================================================
 __inline void swap(array_type* arr, int a, int b){
     array_type tmp = arr[a];
     arr[a] = arr[b];
     arr[b] = tmp;
 }
-// This function implements the partitioning and swapping as described in the quicksort algorithm
+
+
+
+// =======================================================================
+// IMPLEMENTS PARTITIONING AND SWAPPING AS DECRIBED IN QUICKSORT ALGO.
+// ======================================================================
 // It has one input argument which is "Interval"
 // interval is defined as <array_interval_t* interval;> and passed from the tasks when this function is called
 // When you define inteval in your code using the following
@@ -71,44 +72,108 @@ int partition(array_interval_t* interval){
 
 
 
-void in_place_sort( array_interval_t interval ) 
+/*void in_place_sort( array_interval_t interval ) 
 {
   // Your implementation here
+	
+}*/
+
+
+
+// =======================================================================
+// DOES BUBBLE SORT ON LIST OF INTERVAL interval
+// ======================================================================
+void bubbleSort( array_interval_t interval ) 
+{
+	//printf ("\n\n **BUBBLESORT a is %d c is %d", interval.a, interval.c);
+	if (interval.a >= interval.c)
+	{
+		return;
+	}
+	else
+	{
+		if(oneTimeBubble(interval, true))
+		{
+			return;
+		}
+		else
+		{
+			interval.c--;
+			bubbleSort(interval);
+		}
+	}
+	
 }
 
 
+// =======================================================================
+// USED IN bubbleSort() FUNTION TO BUBBLE THROUGH LIST ONCE
+// =======================================================================
+bool oneTimeBubble(array_interval_t interval, bool sorted)
+{
+	//printf ("\n ONE BUBBLE a is %d c is %d", interval.a, interval.c);
+	if(interval.a >= interval.c)
+	{
+		return sorted;
+	}
+	else
+	{
+		//printf ("--> Value a %d value c %d", interval.array.array[interval.a], interval.array.array[interval.c]);
+		if (interval.array.array[interval.a] > interval.array.array[interval.a+1])
+		{
+			//printf ("__SWAPPED!");
+			sorted = false;
+			swap(interval.array.array, interval.a, interval.a+1);
+		}
+		interval.a++;
+		return oneTimeBubble(interval, sorted);
+	}
+}
 
 
+// =======================================================================
+// QUICK SORTS LIST USING MULTIPLE THREADS (NO RECURSION)
+// =======================================================================
 __task void quick_sort_task( void* void_ptr)
 {
-
 	int midpoint; 
 	int initBeginning;
 
+	//printf("\n TASK STARTED interval a %d c %d \n", TASK_PARAM->interval.a, TASK_PARAM->interval.c);
 	// IF LIST IS STILL LARGER THAN INSERTION SORT SIZE
-  	if ( (void_ptr->interval.c - void_ptr->interval.a + 1) >= USE_INSERTION_SORT)
+  	if ( (TASK_PARAM->interval.c - TASK_PARAM->interval.a + 1) >= USE_INSERTION_SORT)
   	{
-  		initBeginning = void_ptr->interval.a;
-  		midpoint = partition( &(void_ptr->interval) );
+  		initBeginning = TASK_PARAM->interval.a;
+  		midpoint = partition( &(TASK_PARAM->interval) );
 
-  		void_ptr->interval.a = midpoint + 1; // split list in two and create thread for upper list
-  		void_ptr->priority++;
-  		os_tsk_create_ex( quick_sort_task, void_ptr->priority, void_ptr ); 
-
-  		void_ptr->interval.c = midpoint - 1; // recursively go through lower list
-  		void_ptr->interval.a = initBeginning;
-  		void quick_sort_task(void_ptr);
+			if (midpoint < TASK_PARAM->interval.c)
+			{
+				TASK_PARAM->interval.a = midpoint + 1; // split list in two and create thread for upper list
+				TASK_PARAM->priority++;
+				os_tsk_create_ex( quick_sort_task, TASK_PARAM->priority, void_ptr );
+			}
+			
+			if (midpoint > initBeginning)
+  		{
+				TASK_PARAM->interval.c = midpoint - 1; // recursively go through lower list
+				TASK_PARAM->interval.a = initBeginning;
+				quick_sort_task(void_ptr);
+			}
   	}
   	else
   	{
-  		// 	IF LIST IS SMALLER THAN USE_INSERTION_SORT THEN DO INSERTION SORT AND EXIT THREAD
-  		in_place_sort(void_ptr->interval);
-  		return;
+  		// 	IF LIST IS SMALLER THAN USE_INSERTION_SORT THEN DO BUBBLE SORT AND EXIT THREAD
+  		bubbleSort(TASK_PARAM->interval);
+  		os_tsk_delete_self();
   	}
+		
+		os_tsk_delete_self();
 }
 
 
-
+// =======================================================================
+// BASICALLY AN INIT FOR THE quick_sort_task() FUNCTION
+// =======================================================================
 void quicksort( array_t array ) {
 	array_interval_t interval;
 	qsort_task_parameters_t task_param;
@@ -126,5 +191,5 @@ void quicksort( array_t array ) {
 	
 	//start the quick_sort threading
 	os_tsk_create_ex( quick_sort_task, task_param.priority, &task_param ); 
-	
+	//bubbleSort( interval ); 
 }

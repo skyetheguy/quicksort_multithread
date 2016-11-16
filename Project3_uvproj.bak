@@ -404,7 +404,7 @@
             <File>
               <FileName>system_LPC17xx.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Software\Keil\ARM\Startup\NXP\LPC17xx\system_LPC17xx.c</FilePath>
+              <FilePath>C:\Keil\ARM\Startup\NXP\LPC17xx\system_LPC17xx.c</FilePath>
             </File>
           </Files>
         </Group>
